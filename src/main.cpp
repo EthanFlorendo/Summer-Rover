@@ -1,44 +1,34 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-/* Arduino Mega pin 13 = PB7 on ATmega2560 */
-#define LED_BIT  PB7
-#define LED_DDR  DDRB
-#define LED_PORT PORTB
-
-#define DOT_MS   200.0
-#define DASH_MS  600.0
-#define SYM_GAP  200.0
-#define LET_GAP  600.0
-#define WORD_GAP 1400.0
-
-static inline void led_on(void)  { LED_PORT |=  (1 << LED_BIT); }
-static inline void led_off(void) { LED_PORT &= ~(1 << LED_BIT); }
-
-static void dot(void) {
-    led_on();  _delay_ms(DOT_MS);
-    led_off(); _delay_ms(SYM_GAP);
-}
-
-static void dash(void) {
-    led_on();  _delay_ms(DASH_MS);
-    led_off(); _delay_ms(SYM_GAP);
-}
-
-/* S = · · ·   O = — — — */
-static void sos(void) {
-    dot(); dot(); dot();
-    _delay_ms(LET_GAP);
-    dash(); dash(); dash();
-    _delay_ms(LET_GAP);
-    dot(); dot(); dot();
-}
-
 int main(void) {
-    LED_DDR |= (1 << LED_BIT);
+    // D5 = PE3 output
+    DDRE |= (1 << PE3);
 
-    for (;;) {
-        sos();
-        _delay_ms(WORD_GAP);
+    // D6 = PH3 output
+    // D7 = PH4 output
+    DDRH |= (1 << PH3) | (1 << PH4);
+
+    while (1) {
+        // Forward
+        PORTE |= (1 << PE3);   // Enable HIGH
+        PORTH |= (1 << PH3);   // IN1 HIGH
+        PORTH &= ~(1 << PH4);  // IN2 LOW
+        _delay_ms(2000);
+
+        // Stop
+        PORTH &= ~(1 << PH3);
+        PORTH &= ~(1 << PH4);
+        _delay_ms(1000);
+
+        // Reverse
+        PORTH &= ~(1 << PH3);  // IN1 LOW
+        PORTH |= (1 << PH4);   // IN2 HIGH
+        _delay_ms(2000);
+
+        // Stop
+        PORTH &= ~(1 << PH3);
+        PORTH &= ~(1 << PH4);
+        _delay_ms(1000);
     }
 }
